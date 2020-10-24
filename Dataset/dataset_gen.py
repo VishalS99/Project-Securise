@@ -4,16 +4,17 @@ import re
 from PIL import Image
 
 DIR = "/home/vishals/Dataset/UFPR-ALPR/UFPR-ALPR dataset/training"
-FINAL = "data_coco.json"
+FINAL = "data_coco_train.json"
 
-def write_json(data, filename=FINAL): 
-    with open(filename,'w') as f: 
-        json.dump(data, f, indent=4) 
 
-#===================================================
-#================ Images Structure =================
-#===================================================
-#         
+def write_json(data, filename=FINAL):
+    with open(filename, 'w') as f:
+        json.dump(data, f, indent=4)
+
+# ===================================================
+# ================ Images Structure =================
+# ===================================================
+#
 #  {
 #             "id": 0,
 #             "license": 1,
@@ -23,13 +24,15 @@ def write_json(data, filename=FINAL):
 #             "date_captured": "2020-07-20T19:39:26+00:00"
 #         },
 
+
 def add_image_data(filename=FINAL):
-    ID = 0        
-    with open(filename) as json_file: 
-        data = json.load(json_file) 
+    ID = 0
+    with open(filename) as json_file:
+        data = json.load(json_file)
         temp = data['images']
         for i in range(60):
-            INTER_DIR = DIR + "/track00" + (("0" + str(i+1)) if i < 9 else str(i+1))
+            INTER_DIR = DIR + "/track00" + \
+                (("0" + str(i+1)) if i < 9 else str(i+1))
 
             for j in range(30):
                 FILE_ABS = INTER_DIR + "/track00" + \
@@ -51,15 +54,15 @@ def add_image_data(filename=FINAL):
                     "date_captured": "2020-07-20T19:39:26+00:00"
                 }
                 ID = ID + 1
-            
+
                 print(ID)
                 temp.append(xx)
-                
+
         write_json(data)
 
-#===================================================
-#============== Annotations Structure ==============
-#===================================================
+# ===================================================
+# ============== Annotations Structure ==============
+# ===================================================
 
 
 #         "annotations": [
@@ -86,7 +89,8 @@ def add_annotations_data(filename=FINAL):
         j_data = json.load(json_file)
         temp = j_data['annotations']
         for i in range(60):
-            INTER_DIR = DIR + "/track00" + (("0" + str(i+1)) if i < 9 else str(i+1))
+            INTER_DIR = DIR + "/track00" + \
+                (("0" + str(i+1)) if i < 9 else str(i+1))
 
             for j in range(30):
                 FILE_ABS = INTER_DIR + "/track00" + \
@@ -103,7 +107,7 @@ def add_annotations_data(filename=FINAL):
                         ld[0] = int(ld[0])
                         ld[1] = int(ld[1])
                         ld[2] = int(ld[2])
-                        ld[3] = int(ld[3]) 
+                        ld[3] = int(ld[3])
                 im = Image.open(LINE)
                 (width, height) = im.size
                 im_size = width * height
@@ -117,11 +121,12 @@ def add_annotations_data(filename=FINAL):
                     "category_id": 1
                 }
                 ID = ID + 1
-            
+
                 print(xx)
                 temp.append(xx)
-                
+
         write_json(j_data)
+
 
 if __name__ == '__main__':
     add_image_data()
