@@ -38,7 +38,7 @@ def add_image_data(filename=FINAL):
                 FILE_ABS = INTER_DIR + "/track00" + \
                     (("0" + str(i+1)) if i < 9 else str(i+1)) + \
                     "[" + ("0" + str(j + 1) if j < 9 else str(j+1)) + "]"
-                FILE_LCL = "track00" + \
+                FILE_LCL = "../Dataset/data_files/track00" + \
                     (("0" + str(i+1)) if i < 9 else str(i+1)) + \
                     "[" + ("0" + str(j + 1) if j < 9 else str(j+1)) + "].png"
 

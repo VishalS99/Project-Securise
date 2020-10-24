@@ -15,11 +15,7 @@
         }
     ],
     "categories": [
-        {
-            "supercategory": "none",
-            "name": "nnp",
-            "id": 2
-        },
+
         {
             "supercategory": "none",
             "name": "np",
