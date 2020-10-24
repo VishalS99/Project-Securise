@@ -26,7 +26,7 @@ def load_config():
 
     cfg.DATALOADER.NUM_WORKERS = 2
     
-    cfg.SOLVER.BASE_LR = 0.0005
+    cfg.SOLVER.BASE_LR = 0.0025
     cfg.SOLVER.MAX_ITER = (300)
     cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = (
         128
