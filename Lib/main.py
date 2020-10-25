@@ -21,7 +21,7 @@ def test():
     
     predictor = DefaultPredictor(cfg)
 
-    img = cv2.imread("/home/vishals/Desktop/d2.jpg")
+    img = cv2.imread("/home/vishals/projects/Securise/Dataset/data_files/676.jpg")
     output = predictor(img)
     print("###OUPUT: {}".format(output))
 
@@ -29,6 +29,7 @@ def test():
         img[:, :, ::-1], metadata=metadata, scale=0.7, instance_mode=ColorMode.SEGMENTATION)
     out = visualizer.draw_instance_predictions(output["instances"].to("cpu"))
     cv2.imshow("Image", out.get_image()[:, :, ::-1])
+    cv2.imwrite(os.path.join(os.getcwd(), "Demo/res2.jpg"), out.get_image()[:, :, ::-1])
     cv2.waitKey(0)
 
 if __name__ == "__main__":
