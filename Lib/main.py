@@ -30,7 +30,7 @@ def test():
     print("- Reading test image")
     try:
         img = cv2.imread(
-            "/home/vishals/projects/Securise/Demo/demo.png")
+            "/home/vishals/projects/Securise/Dataset/Misc/CarNP/8c24eab2f1.jpg")
     except Exception as e:
         print("Err: {}", format(e))
         exit()
@@ -44,6 +44,9 @@ def test():
     out = visualizer.draw_instance_predictions(inst.to("cpu"))
     cv2.imwrite(os.path.join(os.getcwd(), "Demo/res2.jpg"),
                 out.get_image()[:, :, ::-1])
+    cv2.imshow("ROI", out.get_image()[:, :, ::-1])
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
     # ---------------------------------------------------------------
     # Obtain ROI
@@ -57,7 +60,7 @@ def test():
     # Perform Character Segmentation
     # ---------------------------------------------------------------
     print("- Performing character segmentation")
-    character_segmentation(roi, 5)
+    character_segmentation(roi, 2)
     print("- Done")
 
 

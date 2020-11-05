@@ -130,6 +130,7 @@ dmypy.json
 
 # dataset
 data_files
+CarNP*
 
 #Pytorch output
 events.*
