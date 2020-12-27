@@ -130,6 +130,7 @@ dmypy.json
 
 # dataset
 data_files
+ObjectDetection_yolo/yolov3.weights
 
 #Pytorch output
 events.*
