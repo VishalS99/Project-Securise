@@ -1,36 +1,68 @@
-import os
-from sys import path
-
-from detectron2.data.catalog import Metadata
-path.append("../")
-from Config.model_config import load_config 
-import cv2
-from detectron2.engine.defaults import DefaultPredictor
-from detectron2.utils.visualizer import ColorMode, Visualizer
-from detectron2.utils.logger import setup_logger
-from detectron2.engine import DefaultTrainer
 from detectron2.data import transforms as T
-setup_logger()
-
+from detectron2.engine import DefaultTrainer
+from detectron2.utils.logger import setup_logger
+from detectron2.utils.visualizer import ColorMode, Visualizer
+from detectron2.engine.defaults import DefaultPredictor
+from Config.model_config import load_config
+from segmentation import *
+import cv2
+import os
+import numpy as np
+from sys import path
+path.append("../")
+# setup_logger()
 
 
 def test():
+    # ---------------------------------------------------------------
+    # Loading configuration of the model
+    # ---------------------------------------------------------------
+    print("- Loading Model configuration")
     (cfg, data, metadata) = load_config()
     cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, "model_final.pth")
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.7
-    
+
     predictor = DefaultPredictor(cfg)
 
-    img = cv2.imread("/home/vishals/projects/Securise/Dataset/data_files/676.jpg")
+    # ---------------------------------------------------------------
+    # Load image to test and produce output
+    # ---------------------------------------------------------------
+    print("- Reading test image")
+    try:
+        img = cv2.imread(
+            "/home/vishals/projects/Securise/Dataset/Misc/CarNP/8c24eab2f1.jpg")
+    except Exception as e:
+        print("Err: {}", format(e))
+        exit()
+
+    print("- Predicting Bounding boxes")
     output = predictor(img)
-    print("###OUPUT: {}".format(output))
+    inst = output["instances"]
 
     visualizer = Visualizer(
         img[:, :, ::-1], metadata=metadata, scale=0.7, instance_mode=ColorMode.SEGMENTATION)
-    out = visualizer.draw_instance_predictions(output["instances"].to("cpu"))
-    cv2.imshow("Image", out.get_image()[:, :, ::-1])
-    cv2.imwrite(os.path.join(os.getcwd(), "Demo/res2.jpg"), out.get_image()[:, :, ::-1])
+    out = visualizer.draw_instance_predictions(inst.to("cpu"))
+    cv2.imwrite(os.path.join(os.getcwd(), "Demo/res2.jpg"),
+                out.get_image()[:, :, ::-1])
+    cv2.imshow("ROI", out.get_image()[:, :, ::-1])
     cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+    # ---------------------------------------------------------------
+    # Obtain ROI
+    # ---------------------------------------------------------------
+    print("- Generating ROI")
+    boxes = inst.pred_boxes.tensor.detach().cpu().numpy()[0].astype(np.int32)
+    roi = img[boxes[1]:boxes[3], boxes[0]:boxes[2]]
+    roi = cv2.detailEnhance(roi, sigma_s=15, sigma_r=0.5)
+
+    # ---------------------------------------------------------------
+    # Perform Character Segmentation
+    # ---------------------------------------------------------------
+    print("- Performing character segmentation")
+    character_segmentation(roi, 2)
+    print("- Done")
+
 
 if __name__ == "__main__":
     test()
