@@ -130,6 +130,7 @@ dmypy.json
 
 # dataset
 data_files
+Detection/yolov3.weights
 CarNP*
 
 #Pytorch output
