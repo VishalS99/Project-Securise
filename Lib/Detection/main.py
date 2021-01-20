@@ -3,14 +3,18 @@ import cv2
 from matplotlib import pyplot as plt
 from skimage import io
 from datetime import datetime
+import os
 
 
 def yolo_detect(img, height, width, channels):
     # yolo
-    net = cv2.dnn.readNet("yolov3.weights", "yolov3.cfg")
+    # print(os.getcwd())
+    net = cv2.dnn.readNet(os.path.join(
+        os.getcwd(), "Lib/Detection/yolov3.weights"), os.path.join(os.getcwd(), "Lib/Detection/yolov3.cfg"))
     classes = []
 
-    with open("coco.names", "r") as f:
+    with open(os.path.join(
+            os.getcwd(), "Lib/Detection/coco.names"), "r") as f:
         classes = [line.strip() for line in f.readlines()]
     layer_names = net.getLayerNames()
     output_layers = [layer_names[i[0] - 1]
@@ -105,18 +109,18 @@ def visualize_detection(img, boxes, indexes, classes, class_ids):
             # Crop out unwanted region
             cropped_image = img[y+10:y+h-10, x+10:x+w-15]
             # print(x,x+h,y,y+w)
-            cv2.imshow('Cropped Image', cropped_image)
 
     cv2.imshow("Image", img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+    cropped_image = cv2.resize(cropped_image, None, fx=1, fy=1)
     return cropped_image, label
 
 
-def yolo_detection(image_path):
+def yolo_detection(img):
     # Loading image
-    img = cv2.imread(image_path)
-    img = cv2.resize(img, None, fx=0.6, fy=0.6)
+    # img = cv2.imread(img)
+    img = cv2.resize(img, None, fx=1, fy=1)
     height, width, channels = img.shape
 
     max_area_boxes, indexes, classes, class_ids = yolo_detect(
@@ -124,7 +128,8 @@ def yolo_detection(image_path):
 
     cropped_image, label = visualize_detection(img,
                                                max_area_boxes, indexes, classes, class_ids)
-    cv2.imwrite("../Dataset/Cropped_Vehicle.jpg", cropped_image)
+
+    cv2.imwrite("../../Dataset/Cropped_Vehicle.jpg", cropped_image)
 
     # Getting the dominant Color
     data = np.reshape(cropped_image, (-1, 3))
@@ -141,15 +146,15 @@ def yolo_detection(image_path):
     h, s, v = rgb_to_hsv(r, g, b)
 
     # Printing All the Details Analysed
-    print("Dominant color in RGB: ", r, g, b)
-    print('Predicted Major Color of the vehicle (in HSV):', h, s, v)
+    # print("Dominant color in RGB: ", r, g, b)
+    # print('Predicted Major Color of the vehicle (in HSV):', h, s, v)
 
     now = datetime.now()
     dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-    print("Time of Entry:", dt_string)
+    # print("Time of Entry:", dt_string)
 
-    print("Predicted Vehicle Type:", label)
-    return h, v, dt_string, label
+    # print("Predicted Vehicle Type:", label)
+    return h, v, dt_string, label, cropped_image
 
 
-yolo_detection("../../Demo/res2.jpg")
+# yolo_detection("../../Demo/res2.jpg")

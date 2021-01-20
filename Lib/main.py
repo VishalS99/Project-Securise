@@ -4,6 +4,7 @@ from detectron2.utils.logger import setup_logger
 from detectron2.utils.visualizer import ColorMode, Visualizer
 from detectron2.engine.defaults import DefaultPredictor
 from Config.model_config import load_config
+from Detection.main import yolo_detection
 from segmentation import *
 import cv2
 import os
@@ -25,22 +26,33 @@ def test():
     predictor = DefaultPredictor(cfg)
 
     # ---------------------------------------------------------------
-    # Load image to test and produce output
+    # Load image to test
     # ---------------------------------------------------------------
     print("- Reading test image")
     try:
         img = cv2.imread(
             "/home/vishals/projects/Securise/Dataset/Misc/CarNP/8c24eab2f1.jpg")
     except Exception as e:
-        print("Err: {}", format(e))
+        print("Err: {}".format(e))
         exit()
 
+    # ---------------------------------------------------------------
+    # Vehicle extraction - yolo
+    # ---------------------------------------------------------------
+    print("- Predicting properties of the vehicle")
+    (h, v, dt_string, label, cimg) = yolo_detection(img)
+    print("## Vehicle type: {}\n## Vehicle color: {} {}\n## Vehicle entry time: {}\n".
+          format(label, h, v, dt_string))
+
+    # ---------------------------------------------------------------
+    # Extracting number plate
+    # ---------------------------------------------------------------
     print("- Predicting Bounding boxes")
-    output = predictor(img)
+    output = predictor(cimg)
     inst = output["instances"]
 
     visualizer = Visualizer(
-        img[:, :, ::-1], metadata=metadata, scale=0.7, instance_mode=ColorMode.SEGMENTATION)
+        cimg[:, :, ::-1], metadata=metadata, scale=0.7, instance_mode=ColorMode.SEGMENTATION)
     out = visualizer.draw_instance_predictions(inst.to("cpu"))
     cv2.imwrite(os.path.join(os.getcwd(), "Demo/res2.jpg"),
                 out.get_image()[:, :, ::-1])
@@ -53,7 +65,7 @@ def test():
     # ---------------------------------------------------------------
     print("- Generating ROI")
     boxes = inst.pred_boxes.tensor.detach().cpu().numpy()[0].astype(np.int32)
-    roi = img[boxes[1]:boxes[3], boxes[0]:boxes[2]]
+    roi = cimg[boxes[1]:boxes[3], boxes[0]:boxes[2]]
     roi = cv2.detailEnhance(roi, sigma_s=15, sigma_r=0.5)
 
     # ---------------------------------------------------------------

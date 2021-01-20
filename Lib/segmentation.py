@@ -65,7 +65,7 @@ def character_segmentation(image, j):
         # if width / float(w) > 15: continue
 
         area = w*h
-        print("Character{} :".format(ROI_number), area)
+        # print("Character{} :".format(ROI_number), area)
         if area < 2000:
             continue
 
@@ -92,7 +92,7 @@ def character_segmentation(image, j):
             plate_num += clean_text[0]
         except:
             text = None
-            print("Plate", text)
+            print("## Plate", text)
         ext_path = "./Lib/Extracted_NP_Characters"
         if os.path.isdir(ext_path) == False:
             os.mkdir(ext_path)
@@ -102,5 +102,5 @@ def character_segmentation(image, j):
         ROI_number += 1
 
     if plate_num != None:
-        print("License Plate #: ", plate_num)
+        print("- License Plate #: ", plate_num)
     return plate_num
