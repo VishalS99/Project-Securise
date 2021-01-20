@@ -42,7 +42,7 @@ def show_img_compare(img_1, img_2):
 
 
 if __name__ == '__main__':
-    img1 = cv2.imread("target.jpg")
+    img1 = cv2.imread("../../Dataset/road.jpg")
     img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB)
 
     # resize image
@@ -53,3 +53,4 @@ if __name__ == '__main__':
     clt1 = clt.fit(img1.reshape(-1, 3))
     show_img_compare(img1, palette_perc(clt1))
     cv2.imshow('colors',palette_perc(clt1))
+    cv2.waitKey(0)
