@@ -41,8 +41,6 @@ def test():
     # ---------------------------------------------------------------
     print("- Predicting properties of the vehicle")
     (h, v, dt_string, label, cimg) = yolo_detection(img)
-    print("## Vehicle type: {}\n## Vehicle color: {} {}\n## Vehicle entry time: {}\n".
-          format(label, h, v, dt_string))
 
     # ---------------------------------------------------------------
     # Extracting number plate
@@ -72,7 +70,13 @@ def test():
     # Perform Character Segmentation
     # ---------------------------------------------------------------
     print("- Performing character segmentation")
-    character_segmentation(roi, 2)
+    np_character = character_segmentation(roi, 2)
+    print("###############################")
+    print("## Properties of the vehicle ##")
+    print("###############################")
+    print("## Vehicle type: {}\n## Vehicle color: {} {}\n## Vehicle entry time: {}".
+          format(label, h, v, dt_string))
+    print("## Number plate: ", np_character)
     print("- Done")
 
 
