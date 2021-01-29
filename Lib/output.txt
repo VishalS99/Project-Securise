@@ -1,0 +1,62 @@
+[0, 6, 1.3, 1000, 2500]
+Plate T
+Plate N
+Plate None
+Plate 0
+Plate 9
+Plate B
+Plate R
+Plate 0
+Plate 3
+Plate 6
+Plate g
+Plate number# -- TN09BR0369
+[0, 6, 1.3, 4, 1800]
+Plate M
+Plate H
+Plate 1
+Plate 2
+Plate None
+Plate L
+Plate 0
+Plate 7
+Plate 8
+Plate 5
+Plate number# -- MH12L0785
+[0, 6, 1.3, 1000, 2500]
+Plate 2
+Plate A
+Plate N
+Plate 1
+Plate 9
+Plate g
+Plate 1
+Plate number# -- 2AN1991
+[0, 6, 1.3, 1000, 2500]
+Plate 5
+Plate B
+Plate 8
+Plate 2
+Plate 9
+Plate None
+Plate 0
+Plate 8
+Plate number# -- 5B82908
+[0, 6, 1.3, 1000, 2500]
+Plate g
+Plate B
+Plate 4
+Plate 3
+Plate 41
+Plate 9
+Plate 8
+Plate number# -- 9B43498
+[0, 6, 1.3, 4, 1800]
+Plate 6
+Plate B
+Plate 5
+Plate A
+Plate 2
+Plate 5
+Plate 5
+Plate number# -- 6B5A255
