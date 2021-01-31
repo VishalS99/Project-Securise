@@ -88,19 +88,21 @@ def detection(sorted_contours, image, bound, j):
     ret3, image = cv2.threshold(
         blur, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     kernel = np.ones((3, 3), np.uint8)
-    image = cv2.dilate(image, kernel, iterations=6)
+    image = cv2.dilate(image, kernel, iterations=5)
     cv2.imshow("Processed perspective transformed", image)
     cv2.waitKey(0)
     im = image.copy()
     plate_num = ""
     ROI_n = 0
+    roi_total = []
+    # print("image", image)
     for cnt in sorted_contours:
         x, y, w, h = cv2.boundingRect(cnt)
         height, width = im.shape[:2]
         r1 = height / float(h)
         ratio = h/float(w)
         area = w*h
-
+        flag = 0
         if r1 < bound[0] or r1 > bound[1]:
             continue
 
@@ -110,6 +112,21 @@ def detection(sorted_contours, image, bound, j):
         if area < bound[4]:
             continue
 
+        if not roi_total:
+            roi_total.append(x)
+            roi_total.append(y)
+            roi_total.append(w)
+            roi_total.append(h)
+        elif (x > roi_total[0] and y >= roi_total[1] and (w) <= roi_total[2] and h <= roi_total[3]) or ((w*h) <= roi_total[2]*roi_total[3]):
+            flag = 1
+        else:
+            roi_total[0] = x
+            roi_total[1] = y
+            roi_total[2] = w
+            roi_total[3] = h
+
+        if flag:
+            continue
         roi = image[y:y+h, x:x+w]
         #roi = cv2.bitwise_not(roi)
         #roi = cv2.adaptiveThreshold(roi, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
@@ -167,13 +184,15 @@ def character_segmentation(image, j):
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     cv2.imwrite(ext_path + '/image_gray.png', gray)
 
-    rect_kern = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+    rect_kern = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
 
     thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
                                    cv2.THRESH_BINARY, 11, 2)
     cv2.imwrite(ext_path + '/image_thresh.png', thresh)
 
     crop_flag = 1
+    # kernel = np.ones((5,5),np.uint8)
+    # opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
 
     dilation = cv2.erode(thresh, rect_kern, iterations=1)
     image_crop, image_crop_orig = border(dilation, gray, ratio, j)
