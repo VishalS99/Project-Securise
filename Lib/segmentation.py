@@ -74,10 +74,10 @@ def border(image, original, ratio, j):
             cv2.imwrite(ext_path+'/image_borders.png', om)
             cv2.imwrite(ext_path+'/image_crop.png', final_image)
             cv2.imwrite(ext_path+'/image_crop_orig.png', final_image_orig)
-            return final_image, final_image_orig
+            return final_image, final_image_orig, 1
+    return image, original, 0
 
-
-def detection(sorted_contours, image, bound, j):
+def detection(sorted_contours, image, bound, j, original):
     # character identification
     # bound: (r1_l ,r2_h ,ratio_h,ratio_l,area_bound)
     ext_path = os.getcwd() + "/Images/segmentation{}".format(j)
@@ -88,10 +88,12 @@ def detection(sorted_contours, image, bound, j):
     ret3, image = cv2.threshold(
         blur, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     kernel = np.ones((3, 3), np.uint8)
-    image = cv2.dilate(image, kernel, iterations=5)
-    cv2.imshow("Processed perspective transformed", image)
-    cv2.waitKey(0)
+    #image = cv2.dilate(image, kernel, iterations=5)
+    #cv2.imshow("Processed perspective transformed", image)
+    #cv2.waitKey(0)
+    cv2.imwrite(ext_path + '/image_perspective_transformed.png', image)
     im = image.copy()
+    im2 = original.copy()
     plate_num = ""
     ROI_n = 0
     roi_total = []
@@ -99,6 +101,8 @@ def detection(sorted_contours, image, bound, j):
     for cnt in sorted_contours:
         x, y, w, h = cv2.boundingRect(cnt)
         height, width = im.shape[:2]
+        rect = cv2.rectangle(im2, (x, y), (x+w, y+h), (0, 255, 0), 5)
+        #cv2.imwrite(ext_path+'/image_cnt.png',im2)
         r1 = height / float(h)
         ratio = h/float(w)
         area = w*h
@@ -160,7 +164,7 @@ def detection(sorted_contours, image, bound, j):
         cv2.imwrite(ext_path+'/image_{}_ROI_{}.png'.format(j, ROI_n), roi)
         ROI_n += 1
         cv2.imwrite(ext_path + '/image_final.png', rect)
-    if plate_num[0] == 'T':
+    if plate_num and plate_num[0] == 'T':
         s = list(plate_num)
         s[1] = 'N'
         plate_num = "".join(s)
@@ -186,19 +190,20 @@ def character_segmentation(image, j):
 
     rect_kern = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
 
-    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
-                                   cv2.THRESH_BINARY, 11, 2)
-    cv2.imwrite(ext_path + '/image_thresh.png', thresh)
-
+    thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2,2))
+    opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=1)
+    res = 255 - opening
+    res = cv2.erode(res, rect_kern, iterations=1)
+    cv2.imwrite(ext_path + '/image_thresh.png',res)
+ 
     crop_flag = 1
     # kernel = np.ones((5,5),np.uint8)
     # opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
 
-    dilation = cv2.erode(thresh, rect_kern, iterations=1)
-    image_crop, image_crop_orig = border(dilation, gray, ratio, j)
-    if image_crop is None:
-        image_crop = dilation
-        crop_flag = 0
+    
+    image_crop, image_crop_orig, crop_flag = border(res, gray, ratio, j)
+    dilation = cv2.erode(res, rect_kern, iterations=1)
     cv2.imwrite(ext_path + '/image_dilation1.png', dilation)
     try:
         contours, hierarchy = cv2.findContours(
@@ -216,10 +221,9 @@ def character_segmentation(image, j):
         bound = [0, 6, 1.3, 4, 1800]
 
     # print(bound)
-    return detection(sorted_contours, image_crop_orig, bound, j)
+    return detection(sorted_contours, image_crop_orig, bound, j, image)
 
-
-# for i in range(4, 10):
-#     path = 'test{}.png'.format(i)
-#     image = cv2.imread(path)
-#     print('Plate number# --', character_segmentation(image, i))
+for i in range(3,12):
+ path = 'test{}.png'.format(i)
+ image = cv2.imread(path)
+ print('Plate number# --', character_segmentation(image, i))
