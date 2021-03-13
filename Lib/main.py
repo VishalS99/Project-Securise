@@ -11,7 +11,7 @@ import os
 import numpy as np
 from sys import path
 path.append("../")
-# setup_logger()
+setup_logger()
 
 
 def test():
@@ -31,7 +31,7 @@ def test():
     print("- Reading test image")
     try:
         img = cv2.imread(
-            "/home/vishals/projects/Securise/Dataset/Misc/CarNP/8c24eab2f1.jpg")
+            "/home/vso/Projects/Securise/Dataset/dataset1/349.jpg")
     except Exception as e:
         print("Err: {}".format(e))
         exit()

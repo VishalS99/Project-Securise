@@ -1,11 +1,11 @@
 # ML libraries
 
 import numpy as np
-
+from skimage.segmentation import clear_border
 # DL libraries
 
 import pytesseract
-
+from PIL import Image, ImageFilter
 # Image processing
 
 import cv2
@@ -71,7 +71,7 @@ def border(image, original, ratio, j):
             final_image_orig = cv2.warpPerspective(
                 original, matrix, (int(w), h))
 
-            cv2.imwrite(ext_path+'/image_borders.png', om)
+            # cv2.imwrite(ext_path+'/image_borders.png', om)
             cv2.imwrite(ext_path+'/image_crop.png', final_image)
             cv2.imwrite(ext_path+'/image_crop_orig.png', final_image_orig)
             return final_image, final_image_orig, 1
@@ -84,25 +84,25 @@ def detection(sorted_contours, image, bound, j, original):
     if os.path.isdir(ext_path) == False:
         os.mkdir(ext_path)
     # _, image = cv2.threshold(image, 180, 255, cv2.THRESH_BINARY)
-    blur = cv2.GaussianBlur(image, (5, 5), 0)
-    ret3, image = cv2.threshold(
-        blur, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-    kernel = np.ones((3, 3), np.uint8)
+    # blur = cv2.GaussianBlur(image, (5, 5), 0)
+    # ret3, image = cv2.threshold(
+    #     blur, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    # kernel = np.ones((3, 3), np.uint8)
     #image = cv2.dilate(image, kernel, iterations=5)
     #cv2.imshow("Processed perspective transformed", image)
     #cv2.waitKey(0)
     cv2.imwrite(ext_path + '/image_perspective_transformed.png', image)
     im = image.copy()
-    im2 = original.copy()
+    # original_copy = original.copy()
     plate_num = ""
     ROI_n = 0
     roi_total = []
     # print("image", image)
+    # print("CNT: ", len(sorted_contours))
     for cnt in sorted_contours:
         x, y, w, h = cv2.boundingRect(cnt)
-        height, width = im.shape[:2]
-        rect = cv2.rectangle(im2, (x, y), (x+w, y+h), (0, 255, 0), 5)
-        #cv2.imwrite(ext_path+'/image_cnt.png',im2)
+        height, _ = im.shape[:2]
+        
         r1 = height / float(h)
         ratio = h/float(w)
         area = w*h
@@ -115,54 +115,68 @@ def detection(sorted_contours, image, bound, j, original):
 
         if area < bound[4]:
             continue
+        print(bound)
+        print("area " + str(ROI_n) + ": ", area)
 
-        if not roi_total:
-            roi_total.append(x)
-            roi_total.append(y)
-            roi_total.append(w)
-            roi_total.append(h)
-        elif (x > roi_total[0] and y >= roi_total[1] and (w) <= roi_total[2] and h <= roi_total[3]) or ((w*h) <= roi_total[2]*roi_total[3]):
-            flag = 1
-        else:
-            roi_total[0] = x
-            roi_total[1] = y
-            roi_total[2] = w
-            roi_total[3] = h
+        # if not roi_total:
+        #     roi_total.append(x)
+        #     roi_total.append(y)
+        #     roi_total.append(w)
+        #     roi_total.append(h)
+        # elif (x > roi_total[0] and y >= roi_total[1] and (w) <= roi_total[2] and h <= roi_total[3]) or ((w*h) <= roi_total[2]*roi_total[3]):
+        #     flag = 1
+        # else:
+        #     roi_total[0] = x
+        #     roi_total[1] = y
+        #     roi_total[2] = w
+        #     roi_total[3] = h
 
-        if flag:
-            continue
-        roi = image[y:y+h, x:x+w]
-        #roi = cv2.bitwise_not(roi)
-        #roi = cv2.adaptiveThreshold(roi, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+        # if flag:
+        #     continue
+        rect = cv2.rectangle(im, (x, y), (x+w, y+h), (0, 255, 0), 5)
+        cv2.imwrite(ext_path+'/image_cnt.png',rect)
+        cv2.imshow("frame", rect)
+        cv2.waitKey(0)
+        roi = image[y-5:y+h+5, x-5:x+w+5]
+
         white = [255, 255, 255]
-        roi = cv2.copyMakeBorder(
-            roi, 5, 5, 5, 5, cv2.BORDER_CONSTANT, value=white)
+        # roi = cv2.copyMakeBorder(
+        #     roi, 15, 15, 15, 15, cv2.BORDER_CONSTANT, value=white)
         kernel = np.ones((5, 5), np.uint8)
 
-        roi = cv2.morphologyEx(roi, cv2.MORPH_CLOSE, kernel)
-        rect = cv2.rectangle(im, (x, y), (x+w, y+h), (0, 255, 0), 5)
 
-        roi = cv2.resize(roi, (45, 65))
+        roi = cv2.resize(roi, (45*5, 65*5))
+        # roi = clear_border(roi)
+        # roi = cv2.resize(roi, None, fx=1.2, fy=1.2, interpolation=cv2.INTER_CUBIC)
+        roip = cv2.cvtColor(roi, cv2.COLOR_GRAY2RGB)
+        # roip = Image.fromarray(roip)
+        # roip = roip.filter(ImageFilter.SHARPEN);
+        # roip = roip.filter(ImageFilter.SMOOTH)
+
+
+
 
         try:
             text = pytesseract.image_to_string(
-                roi, config='-c tessedit_char_blacklist=abcdefghijklmnopqrstuvwxyz  --psm 10')
+                roip, config='-c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789  --psm 10 --oem 1')
 
         # clean tesseract text by removing any unwanted blank spaces
             text = re.sub('[\W_]+', '', text)
-            if(text[0] == 'g'):
-                plate_num += '9'
-            else:
-                plate_num += text[0]
+            # if(text[0] == 'g'):
+            #     plate_num += '9'
+            # else:
+            plate_num += text[0]
         except:
             text = None
             if(ROI_n == 1 and plate_num[0] == 'T'):
                 text = 'N'
                 plate_num += text[0]
 
-        # print("Plate", text)
+        print("Plate", plate_num)
         cv2.imwrite(ext_path+'/image_{}_ROI_{}.png'.format(j, ROI_n), roi)
         ROI_n += 1
+        # cv2.imshow("frame", roi)
+        # cv2.waitKey(0)
         cv2.imwrite(ext_path + '/image_final.png', rect)
     if plate_num and plate_num[0] == 'T':
         s = list(plate_num)
@@ -182,48 +196,42 @@ def character_segmentation(image, j):
     ratio = img_size[1]/img_size[0]
     image = cv2.resize(image, (int(250*ratio), int(250)))
 
-    image = cv2.fastNlMeansDenoisingColored(image, None, 10, 10, 7, 21)
+    # image = image * 2
     cv2.imwrite(ext_path + '/image_initial.png', image)
 
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+    gray = clahe.apply(gray)
     cv2.imwrite(ext_path + '/image_gray.png', gray)
 
-    rect_kern = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+    rect_kern = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
 
-    thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+    thresh = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2,2))
     opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=1)
-    res = 255 - opening
+
+    res = opening
     res = cv2.erode(res, rect_kern, iterations=1)
     cv2.imwrite(ext_path + '/image_thresh.png',res)
  
-    crop_flag = 1
-    # kernel = np.ones((5,5),np.uint8)
-    # opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
 
     
-    image_crop, image_crop_orig, crop_flag = border(res, gray, ratio, j)
-    dilation = cv2.erode(res, rect_kern, iterations=1)
+    image_crop, image_crop_orig, crop_flag = border(res, gray, ratio , j)
+    dilation = cv2.dilate(image_crop, rect_kern, iterations=2)
     cv2.imwrite(ext_path + '/image_dilation1.png', dilation)
-    try:
-        contours, hierarchy = cv2.findContours(
-            image_crop, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    except:
-        ret_img, contours, hierarchy = cv2.findContours(
-            image_crop, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
+    white = [255, 255, 255]
+    dilation = cv2.copyMakeBorder(
+        dilation, 10, 10, 10, 10, cv2.BORDER_CONSTANT, value=white)
+    contours, hierarchy = cv2.findContours(dilation, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     sorted_contours = sorted(
         contours, key=lambda ctr: cv2.minAreaRect(ctr)[0])
+    print("contour: ", len(sorted_contours))
 
     if crop_flag == 1:
         bound = [0, 6, 1.3, 1000, 2500]
     else:
         bound = [0, 6, 1.3, 4, 1800]
-
     # print(bound)
-    return detection(sorted_contours, image_crop_orig, bound, j, image)
+    return detection(sorted_contours, dilation, bound, j, image_crop_orig)
 
-for i in range(3,12):
- path = 'test{}.png'.format(i)
- image = cv2.imread(path)
- print('Plate number# --', character_segmentation(image, i))

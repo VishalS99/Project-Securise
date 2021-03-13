@@ -107,7 +107,7 @@ def visualize_detection(img, boxes, indexes, classes, class_ids):
             cv2.putText(img, label, (x, y-5), font, 1, color, 2)
 
             # Crop out unwanted region
-            cropped_image = img[y+10:y+h-10, x+10:x+w-15]
+            cropped_image = img[y+5:y+h-5, x+5:x+w-10]
             # print(x,x+h,y,y+w)
 
     cv2.imshow("Image", img)
