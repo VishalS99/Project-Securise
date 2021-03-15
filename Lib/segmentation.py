@@ -87,8 +87,7 @@ def detection(sorted_contours, image, bound, j, original):
     # blur = cv2.GaussianBlur(image, (5, 5), 0)
     # ret3, image = cv2.threshold(
     #     blur, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-    # kernel = np.ones((3, 3), np.uint8)
-    #image = cv2.dilate(image, kernel, iterations=5)
+    
     #cv2.imshow("Processed perspective transformed", image)
     #cv2.waitKey(0)
     cv2.imwrite(ext_path + '/image_perspective_transformed.png', image)
@@ -115,8 +114,8 @@ def detection(sorted_contours, image, bound, j, original):
 
         if area < bound[4]:
             continue
-        print(bound)
-        print("area " + str(ROI_n) + ": ", area)
+        # print(bound)
+        # print("area " + str(ROI_n) + ": ", area)
 
         # if not roi_total:
         #     roi_total.append(x)
@@ -135,30 +134,32 @@ def detection(sorted_contours, image, bound, j, original):
         #     continue
         rect = cv2.rectangle(im, (x, y), (x+w, y+h), (0, 255, 0), 5)
         cv2.imwrite(ext_path+'/image_cnt.png',rect)
-        cv2.imshow("frame", rect)
-        cv2.waitKey(0)
+        # cv2.imshow("frame", rect)
+        # cv2.waitKey(0)
         roi = image[y-5:y+h+5, x-5:x+w+5]
 
         white = [255, 255, 255]
         # roi = cv2.copyMakeBorder(
-        #     roi, 15, 15, 15, 15, cv2.BORDER_CONSTANT, value=white)
-        kernel = np.ones((5, 5), np.uint8)
+        #     roi, 2, 2, 2, 2, cv2.BORDER_CONSTANT, value=white)
 
 
-        roi = cv2.resize(roi, (45*5, 65*5))
+        # roi = cv2.resize(roi, (45*5, 65*5))
         # roi = clear_border(roi)
         # roi = cv2.resize(roi, None, fx=1.2, fy=1.2, interpolation=cv2.INTER_CUBIC)
+        # roi = cv2.GaussianBlur(roi, (3,3), 0)
+        kernel1 = np.ones((1, 1), np.uint8)
+        roi = cv2.erode(roi, kernel1, iterations=1)
+        kernel2 = np.ones((1, 1), np.uint8)
+        roi = cv2.dilate(roi, kernel2, iterations=1)
+        # roi = cv2.threshold(cv2.bilateralFilter(roi, 5, 75, 75), 200, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
         roip = cv2.cvtColor(roi, cv2.COLOR_GRAY2RGB)
-        # roip = Image.fromarray(roip)
-        # roip = roip.filter(ImageFilter.SHARPEN);
-        # roip = roip.filter(ImageFilter.SMOOTH)
-
-
-
+        roip = Image.fromarray(roip)
+        roip = roip.resize((45*6,65*6))
+        roip = roip.filter(ImageFilter.BLUR)
 
         try:
             text = pytesseract.image_to_string(
-                roip, config='-c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789  --psm 10 --oem 1')
+                roip, config='-c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789  --psm 6 --oem 1')
 
         # clean tesseract text by removing any unwanted blank spaces
             text = re.sub('[\W_]+', '', text)
@@ -172,7 +173,7 @@ def detection(sorted_contours, image, bound, j, original):
                 text = 'N'
                 plate_num += text[0]
 
-        print("Plate", plate_num)
+        # print("Plate", plate_num)
         cv2.imwrite(ext_path+'/image_{}_ROI_{}.png'.format(j, ROI_n), roi)
         ROI_n += 1
         # cv2.imshow("frame", roi)
