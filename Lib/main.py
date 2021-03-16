@@ -31,7 +31,7 @@ def test():
     print("- Reading test image")
     try:
         img = cv2.imread(
-            "/home/vso/Projects/Securise/Dataset/dataset1/349.jpg")
+            "/home/vso/Projects/Securise/Dataset/dataset1/54.jpg")
     except Exception as e:
         print("Err: {}".format(e))
         exit()

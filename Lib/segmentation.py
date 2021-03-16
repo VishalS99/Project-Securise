@@ -8,9 +8,15 @@ import pytesseract
 from PIL import Image, ImageFilter
 # Image processing
 
+
+import torch
+
 import cv2
 import os
 import re
+print(os.getcwd())
+from torchvision import transforms
+from CharacterDetection.detect_model import Net 
 
 
 def angle_with_start(coord, start):
@@ -88,8 +94,6 @@ def detection(sorted_contours, image, bound, j, original):
     # ret3, image = cv2.threshold(
     #     blur, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     
-    #cv2.imshow("Processed perspective transformed", image)
-    #cv2.waitKey(0)
     cv2.imwrite(ext_path + '/image_perspective_transformed.png', image)
     im = image.copy()
     # original_copy = original.copy()
@@ -98,6 +102,17 @@ def detection(sorted_contours, image, bound, j, original):
     roi_total = []
     # print("image", image)
     # print("CNT: ", len(sorted_contours))
+    character_model = torch.load("Lib/CharacterDetection/model_character_detect.pt")
+    label_list = ['0','1','2','3','4','5','6','7','8','9', 'A','B','C','D','E','F','G','H', 'I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','fail']
+    transform = transforms.Compose(
+        [
+        #  transforms.ToPILImage(),
+        transforms.Grayscale(num_output_channels=1),
+        transforms.Resize((28,28)),
+        transforms.ToTensor(),
+        transforms.Normalize((0.5), (0.5)),
+        ]
+    )
     for cnt in sorted_contours:
         x, y, w, h = cv2.boundingRect(cnt)
         height, _ = im.shape[:2]
@@ -114,8 +129,7 @@ def detection(sorted_contours, image, bound, j, original):
 
         if area < bound[4]:
             continue
-        # print(bound)
-        # print("area " + str(ROI_n) + ": ", area)
+
 
         # if not roi_total:
         #     roi_total.append(x)
@@ -134,8 +148,6 @@ def detection(sorted_contours, image, bound, j, original):
         #     continue
         rect = cv2.rectangle(im, (x, y), (x+w, y+h), (0, 255, 0), 5)
         cv2.imwrite(ext_path+'/image_cnt.png',rect)
-        # cv2.imshow("frame", rect)
-        # cv2.waitKey(0)
         roi = image[y-5:y+h+5, x-5:x+w+5]
 
         white = [255, 255, 255]
@@ -143,41 +155,41 @@ def detection(sorted_contours, image, bound, j, original):
         #     roi, 2, 2, 2, 2, cv2.BORDER_CONSTANT, value=white)
 
 
-        # roi = cv2.resize(roi, (45*5, 65*5))
-        # roi = clear_border(roi)
         # roi = cv2.resize(roi, None, fx=1.2, fy=1.2, interpolation=cv2.INTER_CUBIC)
-        # roi = cv2.GaussianBlur(roi, (3,3), 0)
-        kernel1 = np.ones((1, 1), np.uint8)
-        roi = cv2.erode(roi, kernel1, iterations=1)
-        kernel2 = np.ones((1, 1), np.uint8)
-        roi = cv2.dilate(roi, kernel2, iterations=1)
+        roi = cv2.GaussianBlur(roi, (5,5), 0)
+        KK = np.ones((3, 3), np.uint8)
+        roi = cv2.dilate(roi, KK, iterations=1)
         # roi = cv2.threshold(cv2.bilateralFilter(roi, 5, 75, 75), 200, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
         roip = cv2.cvtColor(roi, cv2.COLOR_GRAY2RGB)
         roip = Image.fromarray(roip)
-        roip = roip.resize((45*6,65*6))
-        roip = roip.filter(ImageFilter.BLUR)
+        roip = roip.resize((28,28))
 
         try:
-            text = pytesseract.image_to_string(
-                roip, config='-c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789  --psm 6 --oem 1')
-
-        # clean tesseract text by removing any unwanted blank spaces
-            text = re.sub('[\W_]+', '', text)
-            # if(text[0] == 'g'):
-            #     plate_num += '9'
-            # else:
-            plate_num += text[0]
+            roip = transform(roip)
+            roip = roip.cuda()
+            lp = character_model(roip[None, ...])
+            ps = torch.exp(lp)
+            probab = list(ps.cpu()[0])
+            pred_label = probab.index(max(probab))
+            text = label_list[pred_label]
+            if text == 'fail':
+                continue
+            if len(plate_num) <= 4 and len(plate_num) >=2 and text == 'O' or text == 'o':
+                text = '0'
+            if len(plate_num) >= 6 and text == 'O' or text == 'o':
+                text = '0'
+            if len(plate_num) <= 4 and len(plate_num) >=2 and text == 'S' or text == 's':
+                text = '5'
+            if len(plate_num) >= 6 and text == 's' or text == 'S':
+                text = '5'
+            plate_num += text[0].capitalize()
         except:
-            text = None
-            if(ROI_n == 1 and plate_num[0] == 'T'):
-                text = 'N'
-                plate_num += text[0]
+            print("Err instantiating model\n")
+            print("Exiting... \n")
+            continue
 
-        # print("Plate", plate_num)
         cv2.imwrite(ext_path+'/image_{}_ROI_{}.png'.format(j, ROI_n), roi)
         ROI_n += 1
-        # cv2.imshow("frame", roi)
-        # cv2.waitKey(0)
         cv2.imwrite(ext_path + '/image_final.png', rect)
     if plate_num and plate_num[0] == 'T':
         s = list(plate_num)
@@ -227,12 +239,9 @@ def character_segmentation(image, j):
     contours, hierarchy = cv2.findContours(dilation, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     sorted_contours = sorted(
         contours, key=lambda ctr: cv2.minAreaRect(ctr)[0])
-    print("contour: ", len(sorted_contours))
 
     if crop_flag == 1:
         bound = [0, 6, 1.3, 1000, 2500]
     else:
         bound = [0, 6, 1.3, 4, 1800]
-    # print(bound)
     return detection(sorted_contours, dilation, bound, j, image_crop_orig)
-
