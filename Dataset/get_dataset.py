@@ -5,22 +5,27 @@ import random
 import cv2
 import os
 
-def load_dataset(train_path, test_path):
+
+def load_dataset(train_path, test_path, test=False):
 
     # Training data
     register_coco_instances("NP_Dataset_train", {},
-                            train_path, os.path.join(os.getcwd(),"Dataset/data_files"))
+                            train_path, os.path.join(os.getcwd(), "Dataset/dataset1"))
 
     NP_train_metadata = MetadataCatalog.get("NP_Dataset_train")
     NP_train_metadata.thing_colors = [(255, 0, 0), (0, 255, 0)]
     train_dataset_dicts = DatasetCatalog.get("NP_Dataset_train")
-    # Training data
-    register_coco_instances("NP_Dataset_test", {},
-                            test_path, os.path.join(os.getcwd(),"Dataset/data_files"))
 
+    # Testing data
+    if test is True:
+        return (train_dataset_dicts, NP_train_metadata, None, None)    
+    
+    register_coco_instances("NP_Dataset_test", {},
+                            test_path, os.path.join(os.getcwd(), "Dataset/data_files"))
     NP_test_metadata = MetadataCatalog.get("NP_Dataset_test")
     NP_test_metadata.thing_colors = [(255, 0, 0), (0, 255, 0)]
     test_dataset_dicts = DatasetCatalog.get("NP_Dataset_test")
+    
 
     return (train_dataset_dicts, NP_train_metadata, test_dataset_dicts, NP_test_metadata)
 
@@ -38,4 +43,4 @@ def data_vis(train, test):
 
 
 if __name__ == "__main__":
-    data_vis("data_coco_train.json", "data_coco_test.json")
+    data_vis("coco.json", "data_coco_test.json")

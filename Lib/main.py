@@ -1,5 +1,4 @@
 from detectron2.data import transforms as T
-from detectron2.engine import DefaultTrainer
 from detectron2.utils.logger import setup_logger
 from detectron2.utils.visualizer import ColorMode, Visualizer
 from detectron2.engine.defaults import DefaultPredictor
@@ -11,7 +10,7 @@ import os
 import numpy as np
 from sys import path
 path.append("../")
-setup_logger()
+# setup_logger()
 
 
 def test():
@@ -19,7 +18,7 @@ def test():
     # Loading configuration of the model
     # ---------------------------------------------------------------
     print("- Loading Model configuration")
-    (cfg, data, metadata) = load_config()
+    (cfg, metadata) = load_config(True)
     cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, "model_final.pth")
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.7
 
@@ -40,7 +39,7 @@ def test():
     # Vehicle extraction - yolo
     # ---------------------------------------------------------------
     print("- Predicting properties of the vehicle")
-    (h, v, dt_string, label, cimg) = yolo_detection(img)
+    (h, s, v, dt_string, label, cimg) = yolo_detection(img)
 
     # ---------------------------------------------------------------
     # Extracting number plate
@@ -54,9 +53,9 @@ def test():
     out = visualizer.draw_instance_predictions(inst.to("cpu"))
     cv2.imwrite(os.path.join(os.getcwd(), "Demo/res2.jpg"),
                 out.get_image()[:, :, ::-1])
-    cv2.imshow("ROI", out.get_image()[:, :, ::-1])
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # cv2.imshow("ROI", out.get_image()[:, :, ::-1])
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
     # ---------------------------------------------------------------
     # Obtain ROI
@@ -74,8 +73,8 @@ def test():
     print("###############################")
     print("## Properties of the vehicle ##")
     print("###############################")
-    print("## Vehicle type: {}\n## Vehicle color: {} {}\n## Vehicle entry time: {}".
-          format(label, h, v, dt_string))
+    print("## Vehicle type: {}\n## Vehicle color: ({}, {}, {})\n## Vehicle entry time: {}".
+          format(label, h, s, v, dt_string))
     print("## Number plate: ", np_character)
     print("- Done")
 

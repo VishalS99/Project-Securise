@@ -1,5 +1,7 @@
 # ML libraries
 
+from CharacterDetection.detect_model import Net
+from torchvision import transforms
 import numpy as np
 from skimage.segmentation import clear_border
 # DL libraries
@@ -14,9 +16,6 @@ import torch
 import cv2
 import os
 import re
-print(os.getcwd())
-from torchvision import transforms
-from CharacterDetection.detect_model import Net 
 
 
 def angle_with_start(coord, start):
@@ -83,17 +82,18 @@ def border(image, original, ratio, j):
             return final_image, final_image_orig, 1
     return image, original, 0
 
+
 def detection(sorted_contours, image, bound, j, original):
     # character identification
     # bound: (r1_l ,r2_h ,ratio_h,ratio_l,area_bound)
-    ext_path = os.getcwd() + "/Images/segmentation{}".format(j)
+    ext_path = os.getcwd() + "/Output/segmentation{}".format(j)
     if os.path.isdir(ext_path) == False:
         os.mkdir(ext_path)
     # _, image = cv2.threshold(image, 180, 255, cv2.THRESH_BINARY)
     # blur = cv2.GaussianBlur(image, (5, 5), 0)
     # ret3, image = cv2.threshold(
     #     blur, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-    
+
     cv2.imwrite(ext_path + '/image_perspective_transformed.png', image)
     im = image.copy()
     # original_copy = original.copy()
@@ -102,21 +102,23 @@ def detection(sorted_contours, image, bound, j, original):
     roi_total = []
     # print("image", image)
     # print("CNT: ", len(sorted_contours))
-    character_model = torch.load("Lib/CharacterDetection/model_character_detect.pt")
-    label_list = ['0','1','2','3','4','5','6','7','8','9', 'A','B','C','D','E','F','G','H', 'I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','fail']
+    character_model = torch.load(
+        "Lib/CharacterDetection/model_character_detect.pt")
+    label_list = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U',
+                  'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'fail']
     transform = transforms.Compose(
         [
-        #  transforms.ToPILImage(),
-        transforms.Grayscale(num_output_channels=1),
-        transforms.Resize((28,28)),
-        transforms.ToTensor(),
-        transforms.Normalize((0.5), (0.5)),
+            #  transforms.ToPILImage(),
+            transforms.Grayscale(num_output_channels=1),
+            transforms.Resize((28, 28)),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5), (0.5)),
         ]
     )
     for cnt in sorted_contours:
         x, y, w, h = cv2.boundingRect(cnt)
         height, _ = im.shape[:2]
-        
+
         r1 = height / float(h)
         ratio = h/float(w)
         area = w*h
@@ -129,7 +131,6 @@ def detection(sorted_contours, image, bound, j, original):
 
         if area < bound[4]:
             continue
-
 
         # if not roi_total:
         #     roi_total.append(x)
@@ -147,22 +148,21 @@ def detection(sorted_contours, image, bound, j, original):
         # if flag:
         #     continue
         rect = cv2.rectangle(im, (x, y), (x+w, y+h), (0, 255, 0), 5)
-        cv2.imwrite(ext_path+'/image_cnt.png',rect)
+        cv2.imwrite(ext_path+'/image_cnt.png', rect)
         roi = image[y-5:y+h+5, x-5:x+w+5]
 
         white = [255, 255, 255]
         # roi = cv2.copyMakeBorder(
         #     roi, 2, 2, 2, 2, cv2.BORDER_CONSTANT, value=white)
 
-
         # roi = cv2.resize(roi, None, fx=1.2, fy=1.2, interpolation=cv2.INTER_CUBIC)
-        roi = cv2.GaussianBlur(roi, (5,5), 0)
+        roi = cv2.GaussianBlur(roi, (5, 5), 0)
         KK = np.ones((3, 3), np.uint8)
         roi = cv2.dilate(roi, KK, iterations=1)
         # roi = cv2.threshold(cv2.bilateralFilter(roi, 5, 75, 75), 200, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
         roip = cv2.cvtColor(roi, cv2.COLOR_GRAY2RGB)
         roip = Image.fromarray(roip)
-        roip = roip.resize((28,28))
+        roip = roip.resize((28, 28))
 
         try:
             roip = transform(roip)
@@ -174,11 +174,11 @@ def detection(sorted_contours, image, bound, j, original):
             text = label_list[pred_label]
             if text == 'fail':
                 continue
-            if len(plate_num) <= 4 and len(plate_num) >=2 and text == 'O' or text == 'o':
+            if len(plate_num) <= 4 and len(plate_num) >= 2 and text == 'O' or text == 'o':
                 text = '0'
             if len(plate_num) >= 6 and text == 'O' or text == 'o':
                 text = '0'
-            if len(plate_num) <= 4 and len(plate_num) >=2 and text == 'S' or text == 's':
+            if len(plate_num) <= 4 and len(plate_num) >= 2 and text == 'S' or text == 's':
                 text = '5'
             if len(plate_num) >= 6 and text == 's' or text == 'S':
                 text = '5'
@@ -202,7 +202,7 @@ def character_segmentation(image, j):
     # character segmentation and detection
 
     img_size = image.shape
-    ext_path = os.getcwd() + "/Images/segmentation{}".format(j)
+    ext_path = os.getcwd() + "/Output/segmentation{}".format(j)
     if os.path.isdir(ext_path) == False:
         os.mkdir(ext_path)
 
@@ -214,29 +214,29 @@ def character_segmentation(image, j):
 
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     gray = clahe.apply(gray)
     cv2.imwrite(ext_path + '/image_gray.png', gray)
 
     rect_kern = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
 
-    thresh = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2,2))
+    thresh = cv2.threshold(
+        gray, 200, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
     opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=1)
 
     res = opening
     res = cv2.erode(res, rect_kern, iterations=1)
-    cv2.imwrite(ext_path + '/image_thresh.png',res)
- 
+    cv2.imwrite(ext_path + '/image_thresh.png', res)
 
-    
-    image_crop, image_crop_orig, crop_flag = border(res, gray, ratio , j)
+    image_crop, image_crop_orig, crop_flag = border(res, gray, ratio, j)
     dilation = cv2.dilate(image_crop, rect_kern, iterations=2)
     cv2.imwrite(ext_path + '/image_dilation1.png', dilation)
     white = [255, 255, 255]
     dilation = cv2.copyMakeBorder(
         dilation, 10, 10, 10, 10, cv2.BORDER_CONSTANT, value=white)
-    contours, hierarchy = cv2.findContours(dilation, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv2.findContours(
+        dilation, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     sorted_contours = sorted(
         contours, key=lambda ctr: cv2.minAreaRect(ctr)[0])
 

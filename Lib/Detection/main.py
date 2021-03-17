@@ -8,7 +8,6 @@ import os
 
 def yolo_detect(img, height, width, channels):
     # yolo
-    # print(os.getcwd())
     net = cv2.dnn.readNet(os.path.join(
         os.getcwd(), "Lib/Detection/yolov3.weights"), os.path.join(os.getcwd(), "Lib/Detection/yolov3.cfg"))
     classes = []
@@ -108,18 +107,13 @@ def visualize_detection(img, boxes, indexes, classes, class_ids):
 
             # Crop out unwanted region
             cropped_image = img[y+5:y+h-5, x+5:x+w-10]
-            # print(x,x+h,y,y+w)
-
-    cv2.imshow("Image", img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    
     cropped_image = cv2.resize(cropped_image, None, fx=1, fy=1)
     return cropped_image, label
 
 
 def yolo_detection(img):
     # Loading image
-    # img = cv2.imread(img)
     img = cv2.resize(img, None, fx=1, fy=1)
     height, width, channels = img.shape
 
@@ -146,15 +140,9 @@ def yolo_detection(img):
     h, s, v = rgb_to_hsv(r, g, b)
 
     # Printing All the Details Analysed
-    # print("Dominant color in RGB: ", r, g, b)
-    # print('Predicted Major Color of the vehicle (in HSV):', h, s, v)
 
     now = datetime.now()
     dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-    # print("Time of Entry:", dt_string)
-
-    # print("Predicted Vehicle Type:", label)
-    return h, v, dt_string, label, cropped_image
+    return h, v, s, dt_string, label, cropped_image
 
 
-# yolo_detection("../../Demo/res2.jpg")
